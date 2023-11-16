@@ -1,0 +1,15 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "lib": [
+            "WebWorker",
+            "ESNext"
+        ],
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+    },
+    "include": [
+        "Compress.worker.ts",
+    ],
+    "exclude": [],
+}

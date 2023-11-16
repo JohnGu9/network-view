@@ -1,0 +1,17 @@
+{
+  "name": "network_view",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run build:web && npm run build:mid && npm run build:rust",
+    "build:web": "cd web && npm run build",
+    "build:mid": "ts-node build.ts",
+    "build:rust": "cargo build --release"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}

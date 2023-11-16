@@ -1,0 +1,23 @@
+[package]
+name = "network_view"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pnet = { version = "0.34.0", features = ["serde"] }
+bytes = "1.5.0"
+futures = "0.3.28"
+http-body-util = "0.1.0-rc.3"
+hyper = { version = "1.0.0-rc.4", features = ["full"] }
+hyper-util = { git = "https://github.com/hyperium/hyper-util.git" }
+rustls-pemfile = "1.0.3"
+tokio = { version = "1.33.0", features = ["full"] }
+tokio-rustls = { version = "0.24.1", features = ["dangerous_configuration"] }
+tokio-tungstenite = "0.20.1"
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+flate2 = "1.0.28"
+mime_guess = "2.0.4"
+argh = "0.1.12"
