@@ -27,6 +27,7 @@ The build tools:
 - `rust`
 - `nodejs (with npm)`
 
+Start building: 
 ```console
 npm run build
 ```

@@ -5,9 +5,6 @@ use rustls_pemfile::{certs, read_one, Item};
 use std::io::{self, ErrorKind};
 use tokio_rustls::rustls::{Certificate, PrivateKey};
 
-mod cert_verifier;
-pub use cert_verifier::CustomServerCertVerifier;
-
 pub fn load_certs() -> Result<Vec<Certificate>, io::Error> {
     let bytes = include_bytes!("server.crt");
     certs(&mut bytes.reader())
