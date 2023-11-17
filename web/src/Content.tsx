@@ -102,6 +102,10 @@ function toDisplay(speed: number) {
   }
 }
 
+function isOut(header: HeaderType, data: InterfaceDataType) {
+  return header.source === data.mac;
+}
+
 function Overview({ data, selectInterface }: { data: DataType, selectInterface: (interfaceName: string) => unknown }) {
   return (
     <div className='expanded' style={{ overflowY: 'auto' }}>
@@ -221,7 +225,7 @@ function InterfaceChart({ data }: { data: InterfaceDataType }) {
       let inAmount = 0;
       for (const [key, v] of Object.entries(d)) {
         const h = JSON.parse(key) as HeaderType;
-        if (h.source === data.mac) {
+        if (isOut(h, data)) {
           outAmount += v;
         } else {
           inAmount += v;
@@ -354,7 +358,7 @@ function Protocols({ data }: {
 
       for (const [key, size] of Object.entries(v)) {
         const header = JSON.parse(key) as HeaderType;
-        const isOutput = header.source === data.mac;
+        const isOutput = isOut(header, data);
         if (header.ip_header) {
           switch (header.ip_header.protocol) {
             case 6: {
@@ -509,7 +513,7 @@ function IpAddress({ data }: {
       for (const [key, size] of Object.entries(v)) {
         const header = JSON.parse(key) as HeaderType;
         if (header.ip_header) {
-          const isOutput = header.source === data.mac;
+          const isOutput = isOut(header, data);
           ensure(result, header.ip_header.source, timestamp, size, isOutput);
           ensure(result, header.ip_header.destination, timestamp, size, isOutput);
         }
@@ -611,7 +615,7 @@ function MacAddress({ data }: {
     for (const [timestamp, v] of data.history) {
       for (const [key, size] of Object.entries(v)) {
         const header = JSON.parse(key) as HeaderType;
-        const isOutput = header.source === data.mac;
+        const isOutput = isOut(header, data);
         ensure(result, header.source, timestamp, size, isOutput);
         ensure(result, header.destination, timestamp, size, isOutput);
       }

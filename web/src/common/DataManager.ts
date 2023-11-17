@@ -35,16 +35,22 @@ class DataManager {
                 value.mac = oldData.mac;
                 const history = mergeData.history;
                 const start = history.findIndex(v => v !== null);
-                if (start !== -1) {
-                    mergeData.history = [
-                        ...oldData.history,
-                        ...history.slice(start, history.length)
-                    ].slice(-history.length);
-                } else {
-                    mergeData.history = oldData.history;
+                switch (start) {
+                    case -1: {
+                        mergeData.history = oldData.history;
+                        break;
+                    }
+                    case 0: {
+                        break;
+                    }
+                    default: {
+                        mergeData.history = [
+                            ...oldData.history,
+                            ...history.slice(start, history.length)
+                        ].slice(-history.length);
+                    }
                 }
             } else {
-
                 mergeData.history = popFontNull(mergeData.history);
             }
         }
