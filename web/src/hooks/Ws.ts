@@ -28,7 +28,18 @@ function useWs() {
             ws.removeEventListener('error', onerror);
             ws.removeEventListener('open', onopen);
             ws.removeEventListener('close', onerror);
-            ws.close();
+            switch (ws.readyState) {
+                case WebSocket.OPEN: {
+                    ws.close();
+                    break;
+                }
+                case WebSocket.CONNECTING: {
+                    ws.addEventListener('open', function (e: Event) {
+                        const ws = e.target as WebSocket;
+                        ws.close();
+                    }, { once: true, passive: true });
+                }
+            }
         };
     }, [refresh]);
     return ws;

@@ -32,7 +32,7 @@ class DataManager {
             const oldData = this.data[key];
             const mergeData = value;
             if (oldData) {
-                value.mac = oldData.mac;
+                value.mac = oldData.mac ?? value.mac;
                 const history = mergeData.history;
                 const start = history.findIndex(v => v !== null);
                 switch (start) {

@@ -7,6 +7,7 @@ import Manage from './dialogs/Manage';
 import Help from './dialogs/Help';
 import useEChart, { echarts } from './hooks/Echart';
 import { EChartsOption, DefaultLabelFormatterCallbackParams } from 'echarts';
+import useDarkMedia from './hooks/DarkMedia';
 
 export default function Content() {
   const [openHelpDialog, setOpenHelpDialog] = React.useState(false);
@@ -124,7 +125,11 @@ function Overview({ data, selectInterface }: { data: DataType, selectInterface: 
   );
 }
 
-function toChartOption(output: ([number, number])[], input: ([number, number])[]): EChartsOption {
+function toChartOption(
+  output: ([number, number])[],
+  input: ([number, number])[],
+  textColor: string | undefined,
+): EChartsOption {
   return {
     grid: {
       top: 42,
@@ -133,7 +138,10 @@ function toChartOption(output: ([number, number])[], input: ([number, number])[]
       bottom: 15,
     },
     legend: {
-      padding: 12
+      padding: 12,
+      textStyle: {
+        color: textColor,
+      }
     },
     tooltip: {
       trigger: 'axis',
@@ -236,8 +244,9 @@ function InterfaceChart({ data }: { data: InterfaceDataType }) {
     }
     return { output, input };
   }, [data]);
+  const dark = useDarkMedia();
   const ref = React.useRef<HTMLDivElement>(null);
-  useEChart(ref, toChartOption(output, input));
+  useEChart(ref, toChartOption(output, input, dark ? "white" : "black"));
   return <div ref={ref} style={{ height: 200 }} />;
 }
 
@@ -282,8 +291,9 @@ function Detail({ data }: {
 }
 
 function DetailChart({ children, open, close, data }: { children?: React.ReactNode, open: boolean, close: () => unknown, data: { output: [number, number][], input: [number, number][] } }) {
+  const dark = useDarkMedia();
   const ref = React.useRef<HTMLDivElement>(null);
-  useEChart(ref, toChartOption(data.output, data.input));
+  useEChart(ref, toChartOption(data.output, data.input, dark ? "white" : "black"));
   return (
     <>
       <div className='full-size' style={{ overflowY: 'auto' }}>
