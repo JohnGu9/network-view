@@ -20,43 +20,31 @@ class DataManager {
     }
 
     async get() {
-        return await this.getAll();
-        const data = Object.entries(this.data);
-        if (data.length === 0) return await this.getAll();
-        let timestamp = 0;
-        for (const [_, { history }] of data) {
-            if (history.length !== 0) {
-                timestamp = Math.max(timestamp, history[history.length - 1][0]);
-            }
+        const latestTimestamp: { [interfaceName: string]: number } = {};
+        for (const [key, value] of Object.entries(this.data)) {
+            if (value.history.length === 0) continue;
+            latestTimestamp[key] = value.history[value.history.length - 1][0];
         }
-        if (timestamp === 0) return await this.getAll();
+        if (Object.entries(latestTimestamp).length === 0) return await this.getAll();
 
-        const partOfData = await this.connection.get(timestamp);
+        const partOfData = await this.connection.get(latestTimestamp);
         for (const [key, value] of Object.entries(partOfData)) {
-            const oldData = this.data[key]?.history;
+            const oldData = this.data[key];
             const mergeData = value;
-            function popFontNull<T>(arr: Array<T>) {
-                let i = arr.findIndex(v => v !== null);
-                if (i === -1) return [];
-                return arr.slice(i, arr.length - 1);
-            }
             if (oldData) {
+                value.mac = oldData.mac;
                 const history = mergeData.history;
                 const start = history.findIndex(v => v !== null);
                 if (start !== -1) {
-                    for (let i = 0; start + i < history.length && i < oldData.length; i++) {
-                        history[start + i] = oldData[i];
-                    }
-
                     mergeData.history = [
-                        ...oldData.slice(-start),
+                        ...oldData.history,
                         ...history.slice(start, history.length)
-                    ];
+                    ].slice(-history.length);
                 } else {
-                    mergeData.history = popFontNull(history);
-
+                    mergeData.history = oldData.history;
                 }
             } else {
+
                 mergeData.history = popFontNull(mergeData.history);
             }
         }
@@ -91,3 +79,9 @@ class DataManager {
 }
 
 export default DataManager;
+
+function popFontNull<T>(arr: Array<T>) {
+    const i = arr.findIndex(v => v !== null);
+    if (i === -1) return [];
+    return arr.slice(i, arr.length - 1);
+}

@@ -46,15 +46,23 @@ async fn main() {
         None => "localhost:7200",
     };
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let (listener, cert_source, key_source) = futures::join!(
+        tokio::net::TcpListener::bind(addr),
+        read_file(&opt.certificate, "Failed to read certificate file"),
+        read_file(&opt.private_key, "Failed to read private key file"),
+    );
+    let listener = listener.unwrap();
 
-    let certs = load_certs().expect("No available ssl cert");
-    let mut keys = load_keys().expect("No available ssl key");
+    let certs = load_certs(&cert_source).expect("No available ssl cert");
+    let key = load_keys(&key_source)
+        .ok()
+        .and_then(|mut keys| keys.pop())
+        .expect("No available ssl key");
 
     let mut config = ServerConfig::builder()
         .with_safe_defaults()
         .with_no_client_auth()
-        .with_single_cert(certs, keys.pop().expect("No available ssl key"))
+        .with_single_cert(certs, key)
         .unwrap();
     config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec(), b"http/1.0".to_vec()];
     let config = Arc::new(config);
@@ -120,6 +128,16 @@ async fn main() {
     futures::join!(server, statistics(start_time, context.map.clone()));
 }
 
+async fn read_file(path: &Option<String>, expect: &str) -> Option<Vec<u8>> {
+    match path {
+        Some(path) => {
+            let v = tokio::fs::read(path).await.expect(expect);
+            Some(v)
+        }
+        None => None,
+    }
+}
+
 #[derive(Clone)]
 pub struct AppContext {
     start_time: std::time::Instant,
@@ -132,6 +150,14 @@ struct Options {
     /// server listen address (default: 127.0.0.1:7200, example: 0.0.0.0:8080)
     #[argh(option, short = 'l')]
     listen_address: Option<String>,
+
+    /// use custom tls certificate path (example: pem/test.crt)
+    #[argh(option, short = 'c')]
+    certificate: Option<String>,
+
+    /// use custom tls private key path (example: pem/test.key)
+    #[argh(option, short = 'k')]
+    private_key: Option<String>,
 }
 
 #[derive(Clone)]

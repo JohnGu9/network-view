@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 use futures::{lock::Mutex, SinkExt, StreamExt};
 use hyper::{body::Incoming, upgrade::Upgraded, Request};
@@ -67,16 +67,24 @@ async fn handle_request(context: &AppContext, request: Value) -> Value {
             for (key, value) in m.into_iter() {
                 match key.as_str() {
                     "get" => {
-                        if let Value::Number(timestamp) = value {
-                            let timestamp: Option<u64> = timestamp.as_u64();
-                            if let Some(timestamp) = timestamp {
-                                let map = context.map.lock().await;
-                                let mut m = serde_json::Map::with_capacity(map.len());
-                                for (key, value) in map.iter() {
-                                    m.insert(key.clone(), value.part_to_json(timestamp).await);
+                        if let Value::Object(m) = value {
+                            let mut latest_timestamp = HashMap::with_capacity(m.len());
+                            for (key, value) in m.into_iter() {
+                                if let Some(n) = value.as_u64() {
+                                    latest_timestamp.insert(key, n);
                                 }
-                                return json!(m);
                             }
+
+                            let map = context.map.lock().await;
+                            let mut m = serde_json::Map::with_capacity(map.len());
+                            for (key, value) in map.iter() {
+                                if let Some(n) = latest_timestamp.get(key) {
+                                    m.insert(key.clone(), value.part_to_json(n.clone()).await);
+                                } else {
+                                    m.insert(key.clone(), value.to_json().await);
+                                }
+                            }
+                            return json!(m);
                         }
                     }
                     "listen_interfaces" => {

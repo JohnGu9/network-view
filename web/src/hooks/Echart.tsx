@@ -1,7 +1,13 @@
-import * as echarts from 'echarts';
 import React from 'react';
 
-function useEChart<T extends HTMLElement>(ref: React.RefObject<T>, option: echarts.EChartsOption) {
+import { EChartsOption } from 'echarts';
+import * as echarts from 'echarts/core';
+import { LineChart } from 'echarts/charts';
+import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
+echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
+
+function useEChart<T extends HTMLElement>(ref: React.RefObject<T>, option: EChartsOption) {
     const [chart, setChart] = React.useState<echarts.ECharts | null>(null);
     React.useEffect(() => {
         const chart = echarts.init(ref.current!);
@@ -25,3 +31,4 @@ function useEChart<T extends HTMLElement>(ref: React.RefObject<T>, option: echar
 }
 
 export default useEChart;
+export { echarts };

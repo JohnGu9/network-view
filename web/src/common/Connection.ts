@@ -62,8 +62,8 @@ class Connection {
         return data;
     }
 
-    async get(timestamp: number) {
-        const data = await this._request({ get: timestamp }) as DataType;
+    async get(timestamps: { [interfaceName: string]: number }) {
+        const data = await this._request({ get: timestamps }) as DataType;
         if (data === null) throw new Error('No data');
         return data;
     }

@@ -97,7 +97,7 @@ pub async fn start_statistics_interface(
 async fn statistics_interface(
     interface: NetworkInterface,
     buffer: Arc<Mutex<HashMap<PackageHeader, usize>>>,
-    closed: futures::future::Shared<oneshot::Receiver<()>>,
+    mut closed: futures::future::Shared<oneshot::Receiver<()>>,
 ) {
     let name = &interface.name;
 
@@ -120,6 +120,7 @@ async fn statistics_interface(
     };
     let (mut tx, mut channel_rx) = mpsc::channel(64);
     tokio::task::spawn_blocking(move || loop {
+        use futures::executor::block_on;
         match rx.next() {
             Ok(package) => {
                 let header = PackageHeader::new(package);
@@ -127,30 +128,29 @@ async fn statistics_interface(
                     Some(h) => h,
                     None => continue,
                 };
-                if let Err(_) = futures::executor::block_on(tx.send(Ok((header, package.len())))) {
+                if let Err(_) = block_on(tx.send(Ok((header, package.len())))) {
                     break;
                 }
             }
             Err(e) => {
-                let _ = futures::executor::block_on(tx.send(Err(e)));
+                let _ = block_on(tx.send(Err(e)));
                 break;
             }
         }
     });
 
     let buffer = &buffer;
-    loop {
-        let closed = closed.clone();
-        let handle = |(header, len): (PackageHeader, usize)| async move {
-            let mut buffer = buffer.lock().await;
-            match buffer.get_mut(&header) {
-                Some(count) => *count += len,
-                None => {
-                    buffer.insert(header, len);
-                }
+    let handle = |(header, len): (PackageHeader, usize)| async move {
+        let mut buffer = buffer.lock().await;
+        match buffer.get_mut(&header) {
+            Some(count) => *count += len,
+            None => {
+                buffer.insert(header, len);
             }
-        };
-        tokio::select! {
+        }
+    };
+    loop {
+        futures::select! {
             res = channel_rx.next() => {
                 if let Some(res) = res {
                     match res {
@@ -239,20 +239,19 @@ impl InterfaceStatistics {
         let mut i = self.history.iter();
         while let Some((timestamp, value)) = i.next() {
             if *timestamp <= timestamp_limit {
-                v.push((timestamp, Value::Null));
+                v.push(None);
             } else {
-                v.push((timestamp, json!(Self::convert_map(value))));
+                v.push(Some((timestamp, json!(Self::convert_map(value)))));
+                while let Some((timestamp, value)) = i.next() {
+                    v.push(Some((timestamp, json!(Self::convert_map(value)))));
+                }
                 break;
             }
-        }
-        while let Some((timestamp, value)) = i.next() {
-            v.push((timestamp, json!(Self::convert_map(value))));
         }
 
         json!({
             "history": v,
             "closed": closed,
-            "mac": self.mac,
         })
     }
 }
