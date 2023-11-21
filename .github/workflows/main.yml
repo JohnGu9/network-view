@@ -1,0 +1,27 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: johngu9/ubuntu:latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Generate random ssl cart and key
+        run: openssl req -nodes -new -x509  -keyout server.key -out server.crt -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"
+        working-directory: src/tls
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: network_view
+          path: target/release/network_view
