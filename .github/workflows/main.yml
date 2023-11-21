@@ -4,7 +4,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-ubuntu:
     runs-on: ubuntu-latest
     container:
       image: johngu9/ubuntu:latest
@@ -23,5 +23,36 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v3
         with:
-          name: network_view
+          name: network_view_ubuntu
+          path: target/release/network_view
+
+  build-macos:
+    runs-on: "macos-latest"
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+
+      - name: Install OpenSSL
+        run: brew install openssl
+
+      - name: Generate random ssl cart and key
+        run: openssl req -nodes -new -x509  -keyout server.key -out server.crt -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"
+        working-directory: src/tls
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: network_view_macos
           path: target/release/network_view
