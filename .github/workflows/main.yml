@@ -1,7 +1,7 @@
 on:
   push:
-    branches:
-      - main
+    tags:
+      - v**
 
 jobs:
   build-ubuntu:
@@ -12,6 +12,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Generate random ssl cart and key
         run: openssl req -nodes -new -x509  -keyout server.key -out server.crt -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"
@@ -40,6 +48,14 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: "20.x"
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install OpenSSL
         run: brew install openssl

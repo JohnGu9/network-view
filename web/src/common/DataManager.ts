@@ -32,7 +32,7 @@ class DataManager {
             const oldData = this.data[key];
             const mergeData = value;
             if (oldData) {
-                value.mac = oldData.mac ?? value.mac;
+                value.mac ??= oldData.mac;
                 const history = mergeData.history;
                 const start = history.findIndex(v => v !== null);
                 switch (start) {
@@ -66,7 +66,6 @@ class DataManager {
         this.data = { ...this.data, [interfaceName]: { history: [], closed: false, mac: null } }
         this.connection.listenInterface(interfaceName);
         this.callback(this.data);
-
     }
 
     notListenInterface(interfaceName: string) {

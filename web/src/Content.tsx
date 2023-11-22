@@ -594,8 +594,8 @@ function IpAddress({ data }: {
                 }
                 return k1[2] - k0[2]
               })
-              .map(([ip, speed], index) => {
-                return <ListItem key={index} primaryText={ip}
+              .map(([ip, speed]) => {
+                return <ListItem key={ip} primaryText={ip}
                   meta={<SpeedView output={toSpeed(speed.output[lastTimestamp])} input={toSpeed(speed.input[lastTimestamp])} />}
                   activated={selected === ip && openChart}
                   onClick={() => select(ip)} />
@@ -675,8 +675,8 @@ function MacAddress({ data }: {
   return (
     <DetailChart open={openChart} close={() => setOpenChart(false)} data={chartData}>
       <ul>
-        {Object.entries(macs).map(([mac, sizes], index) => {
-          return <ListItem key={index} primaryText={mac}
+        {Object.entries(macs).map(([mac, sizes]) => {
+          return <ListItem key={mac} primaryText={mac}
             secondaryText={mac === data.mac ? "This interface's MAC address" : undefined}
             meta={<SpeedView output={toSpeed(sizes.output[lastTimestamp])} input={toSpeed(sizes.input[lastTimestamp])} />}
             activated={selected === mac && openChart}

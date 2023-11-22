@@ -8,7 +8,6 @@ import useVisibility from './hooks/Visibility';
 import useDataManager from './hooks/DataManager';
 
 const Content = lazyWithPreload(() => import("./Content"));
-Content.preload();
 
 function App() {
   const [children, setChildren] = React.useState(undefined as React.ReactNode);
