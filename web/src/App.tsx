@@ -43,6 +43,7 @@ function ConnectionWaiting({ children }: { children: React.ReactNode }) {
         } catch (error) {
           console.error(error);
         }
+        if (timer === undefined) return;
         const now = Date.now();
         sleepUntil = Math.max(now, sleepUntil + 1000);
         const timeout = sleepUntil - now;
@@ -51,6 +52,7 @@ function ConnectionWaiting({ children }: { children: React.ReactNode }) {
       timer = window.setTimeout(callback, 0);
       return () => {
         window.clearTimeout(timer);
+        timer = undefined as unknown as number;
       }
     }
   }, [connection, visibility]);

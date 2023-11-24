@@ -146,10 +146,10 @@ function toChartOption(
     tooltip: {
       trigger: 'axis',
       formatter: function (params) {
-        const vals = (params as DefaultLabelFormatterCallbackParams[]).reduce(
+        const ret = (params as DefaultLabelFormatterCallbackParams[]).reduce(
           (prev, curr) =>
             prev + '<li style="list-style:none">' + curr.marker + "&nbsp;&nbsp;" + toDisplay((curr.value as number[])[1]) + "</li>", "");
-        return vals;
+        return ret;
       }
     },
     xAxis: {
