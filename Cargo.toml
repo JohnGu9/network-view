@@ -11,17 +11,27 @@ internal-private-key = []
 
 [dependencies]
 pnet = { version = "0.34", features = ["serde"] }
-bytes = "1"
-futures = "0.3"
+
 http-body-util = "0.1"
 hyper = { version = "1", features = ["full"] }
 hyper-util = { git = "https://github.com/hyperium/hyper-util.git" }
-rustls-pemfile = "1"
+
 tokio = { version = "1", features = ["full"] }
-tokio-rustls = "0.24"
 tokio-tungstenite = "0.20"
+tokio-native-tls = "0.3"
+async-compat = "0.2"
+futures = "0.3"
+
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
+
 flate2 = "1"
 mime_guess = "2"
 argh = "0.1"
+bytes = "1"
+
+[patch.crates-io]
+native-tls = { path = "C:\\Project\\rust\\rust-native-tls" }
+
+[package.metadata.cross.target.mips-unknown-linux-musl]
+dockerfile = "./docker/mips"

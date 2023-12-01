@@ -29,11 +29,10 @@ use hyper::{
 use hyper::{Method, Response, StatusCode, Version};
 use hyper_util::rt::TokioIo;
 
-use tokio_rustls::rustls::ServerConfig;
-use tokio_rustls::TlsAcceptor;
+use tokio_native_tls::native_tls;
 use tokio_tungstenite::{tungstenite, WebSocketStream};
 
-use crate::tls::{load_certs, load_keys};
+use crate::tls::{default_certs, default_keys};
 
 pub type ResponseUnit = Result<Frame<Bytes>, Box<dyn std::error::Error + Send + Sync>>;
 pub type ResponseType = Response<StreamBody<mpsc::Receiver<ResponseUnit>>>;
@@ -53,20 +52,25 @@ async fn main() {
     );
     let listener = listener.unwrap();
 
-    let certs = load_certs(&cert_source).expect("No available ssl cert");
-    let key = load_keys(&key_source)
-        .ok()
-        .and_then(|mut keys| keys.pop())
-        .expect("No available ssl key");
+    let certs = match &cert_source {
+        Some(v) => v.as_slice(),
+        None => default_certs().expect(
+            "No default cert. Please rebuild project with `internal-certificate` feature enable",
+        ),
+    };
+    let key = match &key_source {
+        Some(v) => v.as_slice(),
+        None => default_keys().expect(
+            "No default key. Please rebuild project with `internal-private-key` feature enable",
+        ),
+    };
 
-    let mut config = ServerConfig::builder()
-        .with_safe_defaults()
-        .with_no_client_auth()
-        .with_single_cert(certs, key)
-        .unwrap();
-    config.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec(), b"http/1.0".to_vec()];
-    let config = Arc::new(config);
-    let acceptor = TlsAcceptor::from(config.clone());
+    let identity = native_tls::Identity::from_pkcs8(certs, key).unwrap();
+    let builder = native_tls::TlsAcceptor::builder(identity);
+    // @TODO: wait native_tls support alpn
+    // builder.accept_alpn(&["h2", "http1.1"]);
+    let acceptor = builder.build().unwrap();
+    let acceptor = tokio_native_tls::TlsAcceptor::from(acceptor);
 
     println!("listen on https://{:?}", listener.local_addr().unwrap());
 
@@ -93,11 +97,7 @@ async fn main() {
         };
         match acceptor.accept(stream).await {
             Ok(stream) => {
-                let (_, session) = stream.get_ref();
-                let is_h2 = match session.alpn_protocol() {
-                    Some(alpn) => alpn == b"h2",
-                    None => false,
-                };
+                let is_h2 = false; // @TODO: wait native_tls support alpn
                 let stream = TokioIo::new(stream);
                 let res = if is_h2 {
                     let handle = |request| {

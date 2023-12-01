@@ -234,7 +234,7 @@ impl InterfaceStatistics {
     }
 
     pub async fn part_to_json(&self, timestamp_limit: u64) -> Value {
-        if !self.history.is_empty() && self.history[self.history.len()].0 < timestamp_limit {
+        if !self.history.is_empty() && self.history[self.history.len() - 1].0 < timestamp_limit {
             return self.to_json().await;
         }
 
