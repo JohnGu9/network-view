@@ -2,10 +2,10 @@ import React from 'react';
 
 import { EChartsOption } from 'echarts';
 import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
+import { GraphChart, LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
+echarts.use([LineChart, GraphChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
 
 function useEChart<T extends HTMLElement>(ref: React.RefObject<T>, option: EChartsOption) {
     const [chart, setChart] = React.useState<echarts.ECharts | null>(null);

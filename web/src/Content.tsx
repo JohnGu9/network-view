@@ -1,6 +1,6 @@
 import { SharedAxis, SharedAxisTransform } from 'material-design-transform';
 import React from 'react';
-import { Button, Card, Elevation, Icon, IconButton, ListItem, Tab, TabBar, Typography } from 'rmcw'
+import { Elevation, Icon, IconButton, ListItem, Tab, TabBar, Typography } from 'rmcw'
 import { DataType, HeaderType, InterfaceDataType } from './common/Connection';
 import DataManager from './common/DataManager';
 import Manage from './dialogs/Manage';
@@ -16,17 +16,7 @@ export default function Content() {
 
   const list = React.useMemo(() => {
     return Object.entries(data).map(([key, value]) => {
-      const { history, closed } = value;
-      if (closed) return { name: key, speed: null };
-      if (history.length < 2) return { name: key, speed: 0 };
-      const last = history[history.length - 1];
-      const elapsed = last[0] - history[history.length - 2][0];
-      let amount = 0;
-      for (const v of Object.values(last[1])) {
-        amount += v;
-      }
-
-      return { name: key, speed: amount * 1000 / elapsed /** unit: Byte/s */ };
+      return { name: key, speed: toSpeed(value) /** unit: Byte/s */ };
     });
   }, [data]);
 
@@ -103,24 +93,78 @@ function toDisplay(speed: number) {
   }
 }
 
+function toSpeed(value: InterfaceDataType) {
+  const { history, closed } = value;
+  if (closed) return null;
+  if (history.length < 2) return 0;
+  const last = history[history.length - 1];
+  const elapsed = last[0] - history[history.length - 2][0];
+  let amount = 0;
+  for (const v of Object.values(last[1])) {
+    amount += v;
+  }
+  return amount * 1000 / elapsed /** unit: Byte/s */;
+}
+
 function isOut(header: HeaderType, data: InterfaceDataType) {
   return header.source === data.mac;
 }
 
-function Overview({ data, selectInterface }: { data: DataType, selectInterface: (interfaceName: string) => unknown }) {
+function Overview({ data }: { data: DataType, selectInterface: (interfaceName: string) => unknown }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const list = Object.entries(data);
+  useEChart(ref, {
+    series: [
+      {
+        type: 'graph',
+        layout: 'none',
+        symbolSize: 80,
+        roam: false,
+        label: {
+          show: true
+        },
+        edgeSymbol: ['circle', 'arrow'],
+        edgeSymbolSize: [4, 10],
+        edgeLabel: {
+          fontSize: 15
+        },
+        data: [
+          {
+            name: 'Host',
+            x: 0,
+            y: 0,
+            fixed: true,
+          },
+          ...list.map(([interfaceName,], index) => {
+            const degree = 2 * Math.PI / list.length * index;
+            const x = Math.sin(degree) * 200;
+            const y = Math.cos(degree) * 200;
+            return { name: interfaceName, x, y };
+          }),
+        ],
+        links: [
+          ...list.map(([interfaceName, data]) => {
+            return {
+              source: 'Host',
+              target: interfaceName,
+              label: {
+                show: true,
+                formatter: () => { return `${toDisplay(toSpeed(data) ?? 0)}`; }
+              }
+            };
+          })
+        ],
+        lineStyle: {
+          opacity: 0.9,
+          width: 2,
+          curveness: 0
+        }
+      }
+    ],
+  });
   return (
-    <div className='expanded' style={{ overflowY: 'auto' }}>
-      {Object.entries(data).map(([interfaceName, data], index) => {
-        return (
-          <div style={{ padding: '8px 16px' }} key={index}>
-            <Card actionIcons={<>
-              <Button label="view" onClick={() => selectInterface(interfaceName)} />
-              <div className='expanded' />
-              <div style={{ color: 'var(--mdc-theme-on-surface)' }}>{interfaceName} ({data.mac})</div>
-            </>}
-              primaryAction={<InterfaceChart data={data} />}></Card>
-          </div>);
-      })}
+    <div className='expanded' ref={ref}>
+
     </div>
   );
 }
@@ -222,32 +266,6 @@ function toChartOption(
       }
     ]
   };
-}
-
-function InterfaceChart({ data }: { data: InterfaceDataType }) {
-  const { output, input } = React.useMemo(() => {
-    const output: Array<[number, number]> = [];
-    const input: Array<[number, number]> = [];
-    for (const [timestamp, d] of data.history) {
-      let outAmount = 0;
-      let inAmount = 0;
-      for (const [key, v] of Object.entries(d)) {
-        const h = JSON.parse(key) as HeaderType;
-        if (isOut(h, data)) {
-          outAmount += v;
-        } else {
-          inAmount += v;
-        }
-      }
-      output.push([timestamp, outAmount]);
-      input.push([timestamp, inAmount]);
-    }
-    return { output, input };
-  }, [data]);
-  const dark = useDarkMedia();
-  const ref = React.useRef<HTMLDivElement>(null);
-  useEChart(ref, toChartOption(output, input, dark ? "white" : "black"));
-  return <div ref={ref} style={{ height: 200 }} />;
 }
 
 function Detail({ data }: {
